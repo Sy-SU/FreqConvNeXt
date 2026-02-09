@@ -19,7 +19,7 @@ def parse_args():
         '--save-dir',
         type=str,
         help='the dir to save dataset',
-        default='data/coco')
+        default='~/autodl-tmp/data/coco')
     parser.add_argument(
         '--unzip',
         action='store_true',
@@ -38,14 +38,15 @@ def download(url, dir, unzip=True, delete=False, threads=1):
 
     def download_one(url, dir):
         f = dir / Path(url).name
-        if Path(url).is_file():
-            Path(url).rename(f)
-        elif not f.exists():
-            print(f'Downloading {url} to {f}')
-            torch.hub.download_url_to_file(url, f, progress=True)
+        # if Path(url).is_file():
+        #     Path(url).rename(f)
+        # elif not f.exists():
+        #     print(f'Downloading {url} to {f}')
+        #     torch.hub.download_url_to_file(url, f, progress=True)
         if unzip and f.suffix in ('.zip', '.tar'):
             print(f'Unzipping {f.name}')
             if f.suffix == '.zip':
+                print(f'Unzipping Zip {f.name}')
                 ZipFile(f).extractall(path=dir)
             elif f.suffix == '.tar':
                 TarFile(f).extractall(path=dir)
@@ -53,7 +54,9 @@ def download(url, dir, unzip=True, delete=False, threads=1):
                 f.unlink()
                 print(f'Delete {f}')
 
-    dir = Path(dir)
+    # dir = Path(dir)
+    dir = Path(dir).expanduser()
+    print(f"dir = {dir}")
     if threads > 1:
         pool = ThreadPool(threads)
         pool.imap(lambda x: download_one(*x), zip(url, repeat(dir)))
@@ -117,7 +120,8 @@ def download_objects365v2(url, dir, unzip=True, delete=False, threads=1):
         else:
             raise NotImplementedError
 
-    dir = Path(dir)
+    # dir = Path(dir)
+    dir = Path(dir).expanduser()
     if threads > 1:
         pool = ThreadPool(threads)
         pool.imap(lambda x: download_single(*x), zip(full_url, repeat(dir)))
