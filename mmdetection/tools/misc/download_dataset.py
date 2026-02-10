@@ -38,11 +38,11 @@ def download(url, dir, unzip=True, delete=False, threads=1):
 
     def download_one(url, dir):
         f = dir / Path(url).name
-        # if Path(url).is_file():
-        #     Path(url).rename(f)
-        # elif not f.exists():
-        #     print(f'Downloading {url} to {f}')
-        #     torch.hub.download_url_to_file(url, f, progress=True)
+        if Path(url).is_file():
+            Path(url).rename(f)
+        elif not f.exists():
+            print(f'Downloading {url} to {f}')
+            torch.hub.download_url_to_file(url, f, progress=True)
         if unzip and f.suffix in ('.zip', '.tar'):
             print(f'Unzipping {f.name}')
             if f.suffix == '.zip':
