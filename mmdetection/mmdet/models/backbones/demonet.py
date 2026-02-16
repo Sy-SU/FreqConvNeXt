@@ -9,10 +9,41 @@ import torch.utils.checkpoint as cp
 from mmcv.cnn.bricks import DropPath
 from mmengine.model import BaseModule, ModuleList, Sequential
 
-from mmpretrain.registry import MODELS
+# from mmpretrain.registry import MODELS
 from mmpretrain.models.utils import GRN, build_norm_layer
 from mmpretrain.models.backbones.base_backbone import BaseBackbone
 
+from mmdet.registry import MODELS
+
+# -------------------------------------------------------------------------
+#                               频域增强模块
+# -------------------------------------------------------------------------
+class FrequencyBlock(nn.Module):
+    """简单 FFT 频域增强模块（残差方式输出).
+
+    输入 / 输出 shape 均为 (N, C, H, W)，对每个通道独立做 2D FFT，
+    经过 1×1 卷积进行频域幅度增强后再 iFFT，还给空间域并残差相加。
+    """
+
+    def __init__(self, channels: int):
+        super().__init__()
+        # 在频域上做通道间交互的 1×1 conv
+        self.freq_conv = nn.Conv2d(channels, channels, kernel_size=1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # 1. FFT 到频域 (实、虚部保持复数形式)
+        f = torch.fft.rfft2(x, norm='ortho')            # (N,C,H, W//2+1) complex
+        # 2. 幅度-相位分解
+        mag, phase = torch.abs(f), torch.angle(f)       # 实数 tensor
+        # 3. 对幅度做 1×1 conv 增强
+        mag = self.freq_conv(mag)
+        # 4. 重建复数谱
+        f_enh = torch.polar(mag, phase)
+        # 5. 逆 FFT 回空间域 (取实部)
+        x_enh = torch.fft.irfft2(f_enh, s=x.shape[-2:], norm='ortho')
+        # 6. 残差融合
+        return x + x_enh
+# -------------------------------------------------------------------------
 
 class ConvNeXtBlock(BaseModule):
     """ConvNeXt Block.
@@ -233,6 +264,7 @@ class DemoConvNeXt(BaseBackbone):
                  frozen_stages=0,
                  gap_before_final_norm=True,
                  with_cp=False,
+                 use_freq=False, # 频域增强模块开关
                  init_cfg=[
                      dict(
                          type='TruncNormal',
@@ -244,6 +276,10 @@ class DemoConvNeXt(BaseBackbone):
                          bias=0.),
                  ]):
         super().__init__(init_cfg=init_cfg)
+
+        print(">>> Using DemoConvNeXt backbone (freq={})".format(use_freq))
+
+        self.use_freq = use_freq
 
         if isinstance(arch, str):
             assert arch in self.arch_settings, \
@@ -301,6 +337,7 @@ class DemoConvNeXt(BaseBackbone):
         # 4 feature resolution stages, each consisting of multiple residual
         # blocks
         self.stages = nn.ModuleList()
+        self.freq_blocks = nn.ModuleList()                     # --- FREQ MOD
 
         for i in range(self.num_stages):
             depth = self.depths[i]
@@ -332,6 +369,10 @@ class DemoConvNeXt(BaseBackbone):
 
             self.stages.append(stage)
 
+            # --- FREQ MOD: 为每个 stage 分配频域模块 / Identity
+            self.freq_blocks.append(
+                FrequencyBlock(channels) if self.use_freq else nn.Identity())
+
             if i in self.out_indices:
                 norm_layer = build_norm_layer(norm_cfg, channels)
                 self.add_module(f'norm{i}', norm_layer)
@@ -343,6 +384,10 @@ class DemoConvNeXt(BaseBackbone):
         for i, stage in enumerate(self.stages):
             x = self.downsample_layers[i](x)
             x = stage(x)
+            
+            # --- FREQ MOD: 经过频域增强
+            x = self.freq_blocks[i](x)
+            
             if i in self.out_indices:
                 norm_layer = getattr(self, f'norm{i}')
                 if self.gap_before_final_norm:
