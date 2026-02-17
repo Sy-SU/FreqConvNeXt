@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python tools/train.py configs/convnext/mymodel.py
+python tools/train.py work_dirs/mymodel/mymodel.py
