@@ -1,0 +1,90 @@
+COCO-20 Dataset Statistics
+Root: /root/autodl-tmp/data/coco-20
+
+========== TRAIN ==========
+Images:      13500
+Annotations: 113486
+Categories:  20
+
+Per-category statistics:
+Class                  Images  Instances
+person                   8054      38041
+car                      3294      11811
+truck                    1650       2711
+bench                    1486       2700
+dog                      1186       1505
+backpack                 1504       2352
+handbag                  1822       3287
+bottle                   2286       6856
+cup                      2452       5985
+knife                    1164       2327
+bowl                     1915       4046
+chair                    3432      10464
+couch                    1199       1608
+potted plant             1208       2322
+dining table             3166       4407
+tv                       1230       1638
+cell phone               1288       1701
+sink                     1257       1522
+book                     1419       6552
+clock                    1270       1651
+
+========== VAL ==========
+Images:      1500
+Annotations: 12650
+Categories:  20
+
+Per-category statistics:
+Class                  Images  Instances
+person                    884       4302
+car                       353       1255
+truck                     175        307
+bench                     173        328
+dog                       119        154
+backpack                  143        218
+handbag                   214        396
+bottle                    246        754
+cup                       284        732
+knife                     124        239
+bowl                      203        418
+chair                     371       1113
+couch                     121        161
+potted plant              121        276
+dining table              359        502
+tv                        128        160
+cell phone                143        183
+sink                      136        159
+book                      170        838
+clock                     117        155
+
+========== TEST ==========
+Images:      3893
+Annotations: 23064
+Categories:  20
+
+Per-category statistics:
+Class                  Images  Instances
+person                   2693      11004
+car                       535       1932
+truck                     250        415
+bench                     235        413
+dog                       177        218
+backpack                  228        371
+handbag                   292        540
+bottle                    379       1025
+cup                       390        899
+knife                     181        326
+bowl                      314        626
+chair                     580       1791
+couch                     195        261
+potted plant              172        343
+dining table              501        697
+tv                        207        288
+cell phone                214        262
+sink                      187        225
+book                      230       1161
+clock                     204        267
+
+========== TOTAL ==========
+Total Images:      18893
+Total Annotations: 149200
